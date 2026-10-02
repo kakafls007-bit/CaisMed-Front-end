@@ -16,9 +16,9 @@
 const LOGO_SVG = `
 <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M38 14 h24 a6 6 0 0 1 6 6 v14 h14 a6 6 0 0 1 6 6 v10 a6 6 0 0 1 -6 6 H68 v14 a6 6 0 0 1 -6 6 H38 a6 6 0 0 1 -6 -6 V56 H18 a6 6 0 0 1 -6 -6 V40 a6 6 0 0 1 6 -6 h14 V20 a6 6 0 0 1 6 -6 Z"
-        stroke="#d62839" stroke-width="4.5" stroke-linejoin="round" fill="none"/>
+        stroke="#000" stroke-width="4.5" stroke-linejoin="round" fill="none"/>
   <path d="M58 30 c3.5-4 10-4 12.5 0.5 c2.5 4.5 -1 9 -12.5 17 c-11.5-8-15-12.5-12.5-17 c2.5-4.5 9-4.5 12.5-0.5Z"
-        fill="#d62839"/>
+        fill="#E02D2D"/>
 </svg>`;
 
 const PLANOS = {
@@ -905,12 +905,11 @@ if (resumo) {
   const cs = JSON.parse(localStorage.getItem("clientes") || "[]");
   const cons = JSON.parse(localStorage.getItem("consultas") || "[]");
   const mes = new Date().toISOString().slice(0, 7);
-  const receita = cs.reduce((t, c) => t + ((PLANOS[c.plano] || {}).valor || 0), 0);
   const dados = [
     ["Clientes", cs.length],
     ["Novos no Mês", cs.filter((c) => String(c.criadoEm || "").startsWith(mes)).length],
     ["Consultas Aguardando", cons.filter((c) => c.data && !c.atendida).length],
-    ["Receita Mensal", brl(receita)],
+    ["Consultas Concluídas", cons.filter((c) => c.atendida).length],
   ];
   resumo.innerHTML = dados.map(([t, v]) => `<div class="stat"><b>${v}</b>${t}</div>`).join("");
 }
@@ -965,3 +964,24 @@ if (primeiroForm) {
     location.href = "index.html";
   });
 }
+
+
+
+// ---------- Barra de navegação inferior (área do cliente) + saudação ----------
+(function () {
+  const pg = (location.pathname.split("/").pop() || "index.html").replace(".html", "");
+  const sn = document.getElementById("saud-nome");
+  if (sn) sn.textContent = (JSON.parse(localStorage.getItem("usuario") || "{}").nome || "").split(" ")[0] || "Paciente";
+  if (sessionStorage.getItem("sessao") !== "cliente") return;
+  const itens = [
+    ["home", "Início", "M3 11l9-8 9 8v10H3z"],
+    ["consultas", "Consultas", "M3 5h18v16H3zM3 10h18M8 3v4M16 3v4"],
+    ["carteirinha", "Carteirinha", "M3 5h18v14H3zM7 10h4M7 14h6"],
+    ["perfil", "Perfil", "M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c1.5-4 5-6 8-6s6.5 2 8 6"],
+  ];
+  const nav = document.createElement("nav");
+  nav.className = "bottom-nav";
+  nav.innerHTML = itens.map(([k, t, d]) => `<a href="${k}.html" class="${pg === k ? "on" : ""}"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></span>${t}</a>`).join("");
+  const app = document.querySelector(".app");
+  if (app) app.appendChild(nav);
+})();
