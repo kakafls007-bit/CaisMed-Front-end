@@ -10,7 +10,8 @@ Hoje os dados vêm do `localStorage`. Os trechos marcados com `TODO` no `app.js`
 |---|---|
 | Login do cliente (CPF + senha) | `POST /auth/login` |
 | Login do profissional (matrícula + senha) | `POST /auth/profissional/login` |
-| Criar conta | `POST /clientes` |
+| Cadastrar cliente (só o profissional) | `POST /clientes` |
+| Primeiro acesso (cliente cria a senha pelo CPF) | `POST /auth/primeiro-acesso` |
 | Listar / buscar cliente | `GET /clientes`, `GET /clientes/:id` |
 | Alterar cliente (inclui plano) | `PUT /clientes/:id` |
 | Listar planos | `GET /planos` |
@@ -24,4 +25,4 @@ Planos atuais (ficam em `PLANOS`, no topo do `app.js`): Essencial R$ 89,90, Conf
 ## Acessos de demonstração
 
 - Profissional: matrícula `1001`, senha `caismed123`.
-- Cliente: crie uma conta em "Criar Uma Conta" e entre com o CPF e a senha cadastrados.
+- Cliente: o profissional cadastra o cliente (aba Clientes); depois o cliente toca em "Primeiro Acesso", informa o CPF e cria a senha. Não existe cadastro feito pelo próprio cliente.

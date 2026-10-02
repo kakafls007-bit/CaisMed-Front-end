@@ -77,11 +77,13 @@ if (loginForm) {
   loginForm.addEventListener("submit", (e) => {
     e.preventDefault();
     // TODO: trocar por POST /auth/login (back-end). Por enquanto confere com a conta salva no navegador.
-    const salvo = JSON.parse(localStorage.getItem("usuario") || "null");
-    if (!salvo) return alert("Conta não encontrada. Toque em Criar Uma Conta.");
-    if (salvo.cpf !== document.getElementById("cpf").value || salvo.senha !== document.getElementById("senha").value) {
-      return alert("CPF ou senha incorretos.");
-    }
+    // O cliente é cadastrado pelo profissional; a senha é criada no "Primeiro Acesso".
+    const cpfDigitado = document.getElementById("cpf").value;
+    const salvo = JSON.parse(localStorage.getItem("clientes") || "[]").find((c) => c.cpf === cpfDigitado);
+    if (!salvo) return alert("CPF não encontrado. Procure a recepção da clínica para fazer seu cadastro.");
+    if (!salvo.senha) return alert("Você ainda não criou sua senha. Toque em Primeiro Acesso.");
+    if (salvo.senha !== document.getElementById("senha").value) return alert("CPF ou senha incorretos.");
+    localStorage.setItem("usuario", JSON.stringify(salvo));
     sessionStorage.setItem("sessao", "cliente");
     window.location.href = "home.html";
   });
@@ -780,7 +782,11 @@ if (perfilEditarForm) {
       plano: document.getElementById("plano").value,
     };
     // TODO: integrar com a API (PUT/PATCH do cadastro)
-    localStorage.setItem("usuario", JSON.stringify({ ...usuario, ...dados }));
+    const atualizado = { ...usuario, ...dados };
+    localStorage.setItem("usuario", JSON.stringify(atualizado));
+    // Mantém a lista de clientes da clínica em dia
+    const todos = JSON.parse(localStorage.getItem("clientes") || "[]");
+    localStorage.setItem("clientes", JSON.stringify(todos.map((c) => (c.id === atualizado.id ? atualizado : c))));
     window.location.href = "perfil.html";
   });
 }
@@ -817,8 +823,10 @@ if (clienteForm) {
   clienteForm.addEventListener("submit", (e) => {
     e.preventDefault();
     if (!plano) return alert("Escolha o plano do cliente.");
+    const cpfNovo = document.getElementById("cpf").value;
+    if (lista.some((c) => c.cpf === cpfNovo && (!atual || c.id !== atual.id))) return alert("Já existe um cliente cadastrado com este CPF.");
     if (atual && !confirm("Salvar as alterações deste cliente?")) return;
-    const dados = { id: atual ? atual.id : Date.now(), plano, criadoEm: atual ? atual.criadoEm : new Date().toISOString() };
+    const dados = { ...(atual || {}), id: atual ? atual.id : Date.now(), plano, criadoEm: atual ? atual.criadoEm : new Date().toISOString() };
     campos.forEach((k) => (dados[k] = document.getElementById(k).value));
     const nova = atual ? lista.map((c) => (c.id === atual.id ? dados : c)) : [...lista, dados];
     localStorage.setItem("clientes", JSON.stringify(nova));
@@ -935,4 +943,25 @@ if (metodoSel) {
   pix.innerHTML = `${qr()}<p class="aviso">QR Code ilustrativo. A cobrança real virá do back-end.</p><code>00020126CAISMED-PIX-SIMULADO</code>`;
   metodoSel.addEventListener("change", atualizar);
   atualizar();
+}
+
+
+// ---------- Primeiro acesso do cliente (cria a senha) ----------
+const primeiroForm = document.getElementById("primeiro-acesso-form");
+if (primeiroForm) {
+  primeiroForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    // TODO: trocar por POST /auth/primeiro-acesso (back-end)
+    const cpf = document.getElementById("cpf").value;
+    const senha = document.getElementById("senha").value;
+    if (senha !== document.getElementById("senha2").value) return alert("As senhas não são iguais.");
+    const todos = JSON.parse(localStorage.getItem("clientes") || "[]");
+    const cli = todos.find((c) => c.cpf === cpf);
+    if (!cli) return alert("CPF não encontrado. Procure a recepção da clínica para fazer seu cadastro.");
+    if (cli.senha) return alert("Este CPF já tem senha. Volte e faça o login.");
+    cli.senha = senha;
+    localStorage.setItem("clientes", JSON.stringify(todos));
+    alert("Senha criada com sucesso! Agora é só entrar.");
+    location.href = "index.html";
+  });
 }
