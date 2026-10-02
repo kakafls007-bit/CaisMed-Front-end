@@ -1,11 +1,39 @@
+// ---------- Sessão simulada (o back-end vai substituir por token/cookie) ----------
+(function () {
+  const pagina = location.pathname.split("/").pop() || "index.html";
+  const cliente = ["home", "agendamento", "agendamento-confirmado", "consultas", "perfil", "perfil-editar", "pre-triagem", "pagamento", "carteirinha"];
+  const prof = ["painel-profissional", "consulta-profissional", "cliente-form"];
+  const nome = pagina.replace(".html", "");
+  const sessao = sessionStorage.getItem("sessao");
+  if (cliente.includes(nome) && sessao !== "cliente") location.replace("index.html");
+  if (prof.includes(nome) && sessao !== "profissional") location.replace("login-profissional.html");
+  document.addEventListener("click", (e) => {
+    if (e.target.closest && e.target.closest(".logout-link")) sessionStorage.removeItem("sessao");
+  });
+})();
+
 // Ícone (cruz + coração) usado em todas as telas
 const LOGO_SVG = `
 <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M38 14 h24 a6 6 0 0 1 6 6 v14 h14 a6 6 0 0 1 6 6 v10 a6 6 0 0 1 -6 6 H68 v14 a6 6 0 0 1 -6 6 H38 a6 6 0 0 1 -6 -6 V56 H18 a6 6 0 0 1 -6 -6 V40 a6 6 0 0 1 6 -6 h14 V20 a6 6 0 0 1 6 -6 Z"
-        stroke="white" stroke-width="4.5" stroke-linejoin="round" fill="none"/>
+        stroke="#d62839" stroke-width="4.5" stroke-linejoin="round" fill="none"/>
   <path d="M58 30 c3.5-4 10-4 12.5 0.5 c2.5 4.5 -1 9 -12.5 17 c-11.5-8-15-12.5-12.5-17 c2.5-4.5 9-4.5 12.5-0.5Z"
-        fill="white"/>
+        fill="#d62839"/>
 </svg>`;
+
+const PLANOS = {
+  essencial: { nome: "Plano Essencial", valor: 89.9, desc: "Consultas básicas e telemedicina" },
+  conforto: { nome: "Plano Conforto", valor: 149.9, desc: "Essencial + exames simples e especialistas" },
+  premium: { nome: "Plano Premium", valor: 249.9, desc: "Conforto + exames de imagem e check-up anual" },
+  familia: { nome: "Plano Família", valor: 399.9, desc: "Cobertura Premium para até 4 pessoas" },
+};
+const brl = (v) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+// Preenche selects de plano com os nomes e valores oficiais
+document.querySelectorAll("select#plano").forEach((sel) => {
+  sel.innerHTML = '<option value="" disabled selected>Escolha o Plano</option>' +
+    Object.entries(PLANOS).map(([k, p]) => `<option value="${k}">${p.nome} - ${brl(p.valor)}/mês</option>`).join("");
+});
 
 document.querySelectorAll(".logo-icon").forEach((el) => {
   el.innerHTML = LOGO_SVG;
@@ -48,11 +76,13 @@ const loginForm = document.getElementById("login-form");
 if (loginForm) {
   loginForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    // TODO: integrar com a API de autenticação
-    console.log("Login:", {
-      cpf: document.getElementById("cpf").value,
-      senha: document.getElementById("senha").value,
-    });
+    // TODO: trocar por POST /auth/login (back-end). Por enquanto confere com a conta salva no navegador.
+    const salvo = JSON.parse(localStorage.getItem("usuario") || "null");
+    if (!salvo) return alert("Conta não encontrada. Toque em Criar Uma Conta.");
+    if (salvo.cpf !== document.getElementById("cpf").value || salvo.senha !== document.getElementById("senha").value) {
+      return alert("CPF ou senha incorretos.");
+    }
+    sessionStorage.setItem("sessao", "cliente");
     window.location.href = "home.html";
   });
 }
@@ -71,7 +101,7 @@ if (cadastroForm) {
       cidade: document.getElementById("cidade").value,
       plano: document.getElementById("plano").value,
     };
-    console.log("Cadastro:", dados);
+    dados.senha = document.getElementById("senha").value;
     localStorage.setItem("usuario", JSON.stringify(dados));
     window.location.href = "index.html";
   });
@@ -133,6 +163,47 @@ if (chatMessages && chatInputArea) {
 
   const respostas = {};
   let passo = 0;
+
+  function addAudio(url) {
+    const el = document.createElement("div");
+    el.className = "msg msg-user";
+    el.innerHTML = `<audio controls src="${url}"></audio>`;
+    chatMessages.appendChild(el);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // Gravação de áudio (MediaRecorder): clique para gravar e clique de novo para enviar
+  function criarMic(onAudio) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chat-mic";
+    b.title = "Enviar Áudio";
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+    let rec, chunks = [], t0, timer;
+    b.addEventListener("click", async () => {
+      if (rec && rec.state === "recording") { rec.stop(); return; }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        rec = new MediaRecorder(stream);
+        chunks = [];
+        rec.ondataavailable = (e) => chunks.push(e.data);
+        rec.onstop = () => {
+          clearInterval(timer);
+          stream.getTracks().forEach((t) => t.stop());
+          b.classList.remove("rec");
+          b.textContent = "";
+          onAudio(URL.createObjectURL(new Blob(chunks, { type: rec.mimeType })));
+        };
+        rec.start();
+        t0 = Date.now();
+        b.classList.add("rec");
+        timer = setInterval(() => { b.textContent = Math.floor((Date.now() - t0) / 1000) + "s"; }, 500);
+      } catch (err) {
+        alert("Não foi possível acessar o microfone. Libere a permissão no navegador.");
+      }
+    });
+    return b;
+  }
 
   function addMensagem(texto, autor) {
     const el = document.createElement("div");
@@ -216,7 +287,7 @@ if (chatMessages && chatInputArea) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "btn";
-      btn.textContent = "ver minhas consultas";
+      btn.textContent = "Ver Minhas Consultas";
       btn.addEventListener("click", () => {
         window.location.href = "consultas.html";
       });
@@ -256,6 +327,13 @@ if (chatMessages && chatInputArea) {
       sendBtn.addEventListener("click", enviar);
 
       row.appendChild(input);
+      const mic = criarMic((url) => {
+        respostas[p.id] = "[Áudio enviado]";
+        addAudio(url);
+        passo++;
+        renderPasso();
+      });
+      row.appendChild(mic);
       row.appendChild(sendBtn);
       chatInputArea.appendChild(row);
 
@@ -263,7 +341,7 @@ if (chatMessages && chatInputArea) {
         const pular = document.createElement("a");
         pular.href = "javascript:void(0)";
         pular.className = "secondary-link";
-        pular.textContent = "pular";
+        pular.textContent = "Pular";
         pular.addEventListener("click", () => {
           respostas[p.id] = "";
           addMensagem("Pular", "user");
@@ -301,7 +379,7 @@ if (chatMessages && chatInputArea) {
       const confirmBtn = document.createElement("button");
       confirmBtn.type = "button";
       confirmBtn.className = "btn";
-      confirmBtn.textContent = "confirmar";
+      confirmBtn.textContent = "Confirmar";
       confirmBtn.addEventListener("click", () => {
         const valores = Array.from(selecionados);
         respostas[p.id] = valores;
@@ -495,10 +573,11 @@ const loginProfissionalForm = document.getElementById("login-profissional-form")
 if (loginProfissionalForm) {
   loginProfissionalForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    // TODO: integrar com a API de autenticação de profissionais
-    console.log("Login profissional:", {
-      registro: document.getElementById("registro").value,
-    });
+    // TODO: trocar por POST /auth/profissional/login (back-end). Conta de demonstração: 1001 / caismed123
+    if (document.getElementById("registro").value !== "1001" || document.getElementById("senha").value !== "caismed123") {
+      return alert("Matrícula ou senha incorretas.");
+    }
+    sessionStorage.setItem("sessao", "profissional");
     window.location.href = "painel-profissional.html";
   });
 }
@@ -639,7 +718,7 @@ if (consultaDetalhe) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "btn";
-      btn.textContent = "concluir atendimento";
+      btn.textContent = "Concluir Atendimento";
       btn.addEventListener("click", () => {
         // TODO: integrar com a API de atendimento
         consulta.atendida = true;
@@ -656,17 +735,12 @@ if (consultaDetalhe) {
 const perfilInfo = document.getElementById("perfil-info");
 if (perfilInfo) {
   const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
-  const planos = {
-    basico: "Básico",
-    intermediario: "Intermediário",
-    premium: "Premium",
-  };
   document.getElementById("info-nome").textContent = usuario.nome || "—";
   document.getElementById("info-cpf").textContent = usuario.cpf || "—";
   document.getElementById("info-telefone").textContent = usuario.telefone || "—";
   document.getElementById("info-email").textContent = usuario.email || "—";
   document.getElementById("info-cidade").textContent = usuario.cidade || "—";
-  document.getElementById("info-plano").textContent = planos[usuario.plano] || "—";
+  document.getElementById("info-plano").textContent = (PLANOS[usuario.plano] || {}).nome || "—";
 }
 
 // Excluir cadastro (Delete do CRUD de identidade)
@@ -706,8 +780,159 @@ if (perfilEditarForm) {
       plano: document.getElementById("plano").value,
     };
     // TODO: integrar com a API (PUT/PATCH do cadastro)
-    console.log("Perfil atualizado:", dados);
-    localStorage.setItem("usuario", JSON.stringify(dados));
+    localStorage.setItem("usuario", JSON.stringify({ ...usuario, ...dados }));
     window.location.href = "perfil.html";
   });
+}
+
+// ---------- Profissional: clientes ----------
+const clientes = () => JSON.parse(localStorage.getItem("clientes") || "[]");
+const listaClientes = document.getElementById("lista-clientes");
+if (listaClientes) {
+  const l = clientes();
+  listaClientes.innerHTML = '<a class="btn" href="cliente-form.html">Cadastrar Novo Cliente</a>' +
+    (l.length ? l.map((c) => `<a class="consulta-card" href="cliente-form.html?id=${c.id}">
+      <div class="consulta-top"><span class="consulta-especialidade">${c.nome}</span><span class="consulta-status">${(PLANOS[c.plano] || {}).nome || "—"}</span></div>
+      <div class="consulta-data">CPF ${c.cpf} · ${c.telefone}</div><span class="consulta-action">Alterar Dados</span></a>`).join("")
+      : '<p class="empty-state">Nenhum cliente cadastrado ainda.</p>');
+}
+
+const clienteForm = document.getElementById("cliente-form");
+if (clienteForm) {
+  const id = new URLSearchParams(location.search).get("id");
+  const lista = clientes();
+  const atual = lista.find((c) => String(c.id) === id);
+  const campos = ["nome", "cpf", "nascimento", "telefone", "email", "cidade", "pagamento"];
+  const grade = document.getElementById("plan-grid");
+  let plano = atual ? atual.plano : "";
+  const desenhar = () => {
+    grade.innerHTML = Object.entries(PLANOS).map(([k, p]) => `<div class="plan-card ${k === plano ? "sel" : ""}" data-k="${k}"><b><span>${p.nome}</span><span>${brl(p.valor)}/mês</span></b><small>${p.desc}</small></div>`).join("");
+    grade.querySelectorAll(".plan-card").forEach((el) => el.addEventListener("click", () => { plano = el.dataset.k; desenhar(); }));
+  };
+  desenhar();
+  if (atual) {
+    campos.forEach((k) => (document.getElementById(k).value = atual[k] || ""));
+    document.getElementById("titulo-cliente").textContent = "Alterar Dados do Cliente";
+  }
+  clienteForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!plano) return alert("Escolha o plano do cliente.");
+    if (atual && !confirm("Salvar as alterações deste cliente?")) return;
+    const dados = { id: atual ? atual.id : Date.now(), plano, criadoEm: atual ? atual.criadoEm : new Date().toISOString() };
+    campos.forEach((k) => (dados[k] = document.getElementById(k).value));
+    const nova = atual ? lista.map((c) => (c.id === atual.id ? dados : c)) : [...lista, dados];
+    localStorage.setItem("clientes", JSON.stringify(nova));
+    alert(atual ? "Dados atualizados com sucesso!" : "Cliente cadastrado com sucesso!");
+    location.href = "painel-profissional.html";
+  });
+}
+
+// ---------- Cliente: pagamento ----------
+const pagBox = document.getElementById("fatura");
+if (pagBox) {
+  const u = JSON.parse(localStorage.getItem("usuario") || "{}");
+  const pl = PLANOS[u.plano];
+  const hist = () => JSON.parse(localStorage.getItem("pagamentos") || "[]");
+  const venc = new Date(); venc.setDate(venc.getDate() + 7);
+  const pagoMes = hist().some((h) => h.mes === new Date().toISOString().slice(0, 7));
+  pagBox.innerHTML = pl
+    ? `<div class="summary-row"><span class="label">Plano</span><span class="value">${pl.nome}</span></div>
+       <div class="summary-row"><span class="label">Valor</span><span class="value">${brl(pl.valor)}</span></div>
+       <div class="summary-row"><span class="label">Vencimento</span><span class="value">${venc.toLocaleDateString("pt-BR")}</span></div>
+       <div class="summary-row"><span class="label">Status</span><span class="consulta-status ${pagoMes ? "realizada" : "pendente"}">${pagoMes ? "Pago" : "Pendente"}</span></div>`
+    : '<p class="empty-state">Escolha um plano no seu perfil para ver a fatura.</p>';
+  const desenharHist = () => {
+    document.getElementById("historico-pag").innerHTML = hist().length
+      ? hist().map((h) => `<div class="consulta-card"><div class="consulta-top"><span class="consulta-especialidade">${h.plano}</span><span class="consulta-status realizada">Pago</span></div><div class="consulta-data">${h.data} · ${h.valor} · ${h.metodo}</div></div>`).join("")
+      : '<p class="empty-state">Nenhum pagamento realizado.</p>';
+  };
+  desenharHist();
+  document.getElementById("btn-pagar").addEventListener("click", () => {
+    if (!pl || pagoMes) return alert(pl ? "A fatura deste mês já está paga." : "Nenhum plano contratado.");
+    const metodo = document.getElementById("metodo").value;
+    localStorage.setItem("pagamentos", JSON.stringify([...hist(), { mes: new Date().toISOString().slice(0, 7), plano: pl.nome, valor: brl(pl.valor), metodo, data: new Date().toLocaleDateString("pt-BR") }]));
+    alert("Pagamento confirmado! Obrigado.");
+    location.reload();
+  });
+}
+
+
+// ---------- Validação e máscaras (front) ----------
+function cpfValido(c) {
+  c = (c || "").replace(/\D/g, "");
+  if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+  const dv = (n) => {
+    let soma = 0;
+    for (let i = 0; i < n; i++) soma += +c[i] * (n + 1 - i);
+    const r = (soma * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return dv(9) === +c[9] && dv(10) === +c[10];
+}
+document.querySelectorAll('input[type="tel"]').forEach((el) => {
+  el.placeholder = "(81) 99999-9999";
+  el.addEventListener("input", () => {
+    const d = el.value.replace(/\D/g, "").slice(0, 11);
+    el.value = d.length > 6 ? `(${d.slice(0, 2)}) ${d.slice(2, d.length - 4)}-${d.slice(-4)}` : d.length > 2 ? `(${d.slice(0, 2)}) ${d.slice(2)}` : d;
+  });
+});
+// Bloqueia envio com CPF inválido (cadastro, perfil e cliente)
+["cadastro-form", "perfil-editar-form", "cliente-form"].forEach((fid) => {
+  const f = document.getElementById(fid);
+  if (!f) return;
+  f.addEventListener("submit", (e) => {
+    const cpf = f.querySelector('input[name="cpf"]');
+    if (cpf && !cpfValido(cpf.value)) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      alert("CPF inválido. Confira os 11 números.");
+      cpf.focus();
+    }
+  }, true);
+});
+
+// ---------- Painel: resumo ----------
+const resumo = document.getElementById("resumo-painel");
+if (resumo) {
+  const cs = JSON.parse(localStorage.getItem("clientes") || "[]");
+  const cons = JSON.parse(localStorage.getItem("consultas") || "[]");
+  const mes = new Date().toISOString().slice(0, 7);
+  const receita = cs.reduce((t, c) => t + ((PLANOS[c.plano] || {}).valor || 0), 0);
+  const dados = [
+    ["Clientes", cs.length],
+    ["Novos no Mês", cs.filter((c) => String(c.criadoEm || "").startsWith(mes)).length],
+    ["Consultas Aguardando", cons.filter((c) => c.data && !c.atendida).length],
+    ["Receita Mensal", brl(receita)],
+  ];
+  resumo.innerHTML = dados.map(([t, v]) => `<div class="stat"><b>${v}</b>${t}</div>`).join("");
+}
+
+// ---------- Carteirinha ----------
+const cart = document.getElementById("carteirinha");
+if (cart) {
+  const u = JSON.parse(localStorage.getItem("usuario") || "{}");
+  document.getElementById("cart-nome").textContent = u.nome || "Nome do Beneficiário";
+  document.getElementById("cart-plano").textContent = (PLANOS[u.plano] || {}).nome || "Sem Plano";
+  document.getElementById("cart-num").textContent = ("0000" + (u.cpf || "00000000000").slice(-9)).replace(/(\d{4})(\d{4})(\d{5})/, "$1 $2 $3");
+}
+
+// ---------- Pix simulado (QR decorativo + copia e cola) ----------
+const metodoSel = document.getElementById("metodo");
+if (metodoSel) {
+  const pix = document.getElementById("pix-box");
+  const qr = () => {
+    let x = 7, r = "";
+    for (let i = 0; i < 21; i++) for (let j = 0; j < 21; j++) {
+      x = (x * 1103515245 + 12345) & 0x7fffffff;
+      const canto = (i < 7 && j < 7) || (i < 7 && j > 13) || (i > 13 && j < 7);
+      if (canto ? (i % 6 === 0 || j % 6 === 0 || ((i % 6) % 6 > 1 && (i % 6) < 5 && (j % 6) > 1 && (j % 6) < 5) || [2,3,4].includes(i % 14) && [2,3,4].includes(j % 14)) : x % 3 === 0) r += `<rect x="${j}" y="${i}" width="1" height="1"/>`;
+    }
+    return `<svg viewBox="0 0 21 21" width="160" height="160" aria-label="QR Code Pix (simulado)">${r}</svg>`;
+  };
+  const atualizar = () => {
+    pix.style.display = metodoSel.value === "Pix" ? "block" : "none";
+  };
+  pix.innerHTML = `${qr()}<p class="aviso">QR Code ilustrativo. A cobrança real virá do back-end.</p><code>00020126CAISMED-PIX-SIMULADO</code>`;
+  metodoSel.addEventListener("change", atualizar);
+  atualizar();
 }

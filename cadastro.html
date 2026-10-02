@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Criar conta</title>
+  <title>Criar Conta</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,16 +12,16 @@
       <a href="index.html" class="back-btn" data-fallback="index.html"></a>
       <div class="logo logo-inline">
         <span class="logo-icon"></span>
-        <span>nome</span>
+        <span>CaisMed</span>
       </div>
     </header>
 
     <main class="app-body">
-      <p class="intro-text left">Coloque suas informações</p>
+      <p class="intro-text left">Crie Sua Conta</p>
 
       <form id="cadastro-form">
         <div class="field">
-          <label for="nome" class="accent">Nome completo</label>
+          <label for="nome" class="accent">Nome Completo</label>
           <input type="text" id="nome" name="nome" required />
         </div>
 
@@ -36,8 +36,13 @@
         </div>
 
         <div class="field">
-          <label for="email" class="accent">Email</label>
+          <label for="email" class="accent">E-mail</label>
           <input type="email" id="email" name="email" required />
+        </div>
+
+        <div class="field">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" name="senha" minlength="6" required />
         </div>
 
         <div class="field">
@@ -46,9 +51,9 @@
         </div>
 
         <div class="field">
-          <label for="plano" style="visibility:hidden; height:0; margin:0;">Tipos de plano</label>
+          <label for="plano" style="visibility:hidden; height:0; margin:0;">Escolha o Plano</label>
           <select id="plano" name="plano" required>
-            <option value="" disabled selected>Tipos de plano</option>
+            <option value="" disabled selected>Escolha o Plano</option>
             <option value="basico">Básico</option>
             <option value="intermediario">Intermediário</option>
             <option value="premium">Premium</option>
@@ -56,7 +61,7 @@
         </div>
 
         <div class="bottom-area">
-          <button type="submit" class="btn">criar</button>
+          <button type="submit" class="btn">Criar Conta</button>
         </div>
       </form>
     </main>

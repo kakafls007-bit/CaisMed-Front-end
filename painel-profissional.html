@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel do profissional</title>
+  <title>CaisMed | Painel Profissional</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,22 +12,26 @@
       <a href="login-profissional.html" class="back-btn" data-fallback="login-profissional.html"></a>
       <div class="logo logo-inline">
         <span class="logo-icon"></span>
-        <span>nome</span>
+        <span>CaisMed</span>
       </div>
     </header>
 
     <main class="app-body">
-      <p class="intro-text left">Suas consultas</p>
+      <p class="intro-text left">Painel Profissional</p>
+
+      <div class="stats" id="resumo-painel"></div>
 
       <div class="tabs" id="painel-tabs">
         <button type="button" class="tab-btn active" data-tab="lista-aguardando">Aguardando</button>
         <button type="button" class="tab-btn" data-tab="lista-concluidas">Concluídas</button>
+        <button type="button" class="tab-btn" data-tab="lista-clientes">Clientes</button>
       </div>
 
       <div class="tab-panel active" id="lista-aguardando"></div>
       <div class="tab-panel" id="lista-concluidas"></div>
+      <div class="tab-panel" id="lista-clientes"></div>
 
-      <a class="logout-link" href="login-profissional.html">sair</a>
+      <a class="logout-link" href="login-profissional.html">Sair</a>
     </main>
   </div>
 
