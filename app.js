@@ -49,12 +49,8 @@ document.querySelectorAll(".back-btn").forEach((el) => {
   el.innerHTML = BACK_SVG;
   el.addEventListener("click", (e) => {
     e.preventDefault();
-    const fallback = el.getAttribute("data-fallback") || "home.html";
-    if (document.referrer && document.referrer.includes(window.location.host)) {
-      history.back();
-    } else {
-      window.location.href = fallback;
-    }
+    // Voltar leva sempre para a tela "pai" (como num app), sem andar pelo histórico do navegador
+    window.location.replace(el.getAttribute("data-fallback") || "home.html");
   });
 });
 
