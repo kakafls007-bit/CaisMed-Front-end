@@ -981,12 +981,11 @@ if (primeiroForm) {
   if (app) app.appendChild(nav);
 })();
 
-// ---------- Acessibilidade: tema Padrão / Branco / Preto (fica salvo no navegador) ----------
+// ---------- Acessibilidade: tema Claro / Escuro (mesmas cores do app, só muda o fundo; fica salvo no navegador) ----------
 (function () {
   const TEMAS = [
-    { id: "padrao", nome: "Padrão", desc: "Cores do CaisMed" },
-    { id: "branco", nome: "Branco", desc: "Fundo branco e letras pretas, alto contraste" },
-    { id: "preto", nome: "Preto", desc: "Fundo preto e letras brancas, alto contraste" },
+    { id: "claro", nome: "Claro", desc: "Fundo claro, como o app é por padrão" },
+    { id: "escuro", nome: "Escuro", desc: "Fundo escuro, mais confortável à noite" },
   ];
   const A11Y_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v4.5M12 14.5l-3.5 6M12 14.5l3.5 6"/></svg>`;
 
@@ -997,7 +996,7 @@ if (primeiroForm) {
       b.setAttribute("aria-pressed", String(b.dataset.tema === id))
     );
   }
-  const atual = () => document.documentElement.getAttribute("data-tema") || "padrao";
+  const atual = () => document.documentElement.getAttribute("data-tema") || "claro";
 
   const overlay = document.createElement("div");
   overlay.className = "a11y-overlay";
@@ -1007,7 +1006,7 @@ if (primeiroForm) {
         <h2 id="a11y-titulo">Acessibilidade</h2>
         <button type="button" class="a11y-close" aria-label="Fechar">✕</button>
       </div>
-      <p class="a11y-sub">Escolha o tema que fica melhor para você ler.</p>
+      <p class="a11y-sub">Escolha o tema do app. As cores continuam as mesmas.</p>
       ${TEMAS.map((t) => `
         <button type="button" class="a11y-opt" data-tema="${t.id}" aria-pressed="false">
           <span class="a11y-swatch sw-${t.id}"></span>
