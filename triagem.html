@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pré-Triagem</title>
+  <title>CaisMed | Triagem</title>
+  <script>document.documentElement.setAttribute("data-tema",localStorage.getItem("tema")||"padrao")</script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app">
+  <div class="app app-chat">
     <header class="app-header header-compact">
       <a href="home.html" class="back-btn" data-fallback="home.html"></a>
       <div class="logo logo-inline">
@@ -17,11 +18,11 @@
     </header>
 
     <main class="app-body chat-body">
-      <p class="intro-text left">Pré-Triagem</p>
+      <p class="intro-text left">Triagem</p>
 
       <div class="chat-messages" id="chat-messages"></div>
       <div class="chat-input-area" id="chat-input-area"></div>
-      <p class="aviso">A pré-triagem não substitui uma consulta médica.</p>
+      <p class="aviso">A triagem não substitui uma consulta médica.</p>
     </main>
   </div>
 

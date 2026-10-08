@@ -1,7 +1,7 @@
 // ---------- Sessão simulada (o back-end vai substituir por token/cookie) ----------
 (function () {
   const pagina = location.pathname.split("/").pop() || "index.html";
-  const cliente = ["home", "agendamento", "agendamento-confirmado", "consultas", "perfil", "perfil-editar", "pre-triagem", "pagamento", "carteirinha"];
+  const cliente = ["home", "agendamento", "agendamento-confirmado", "consultas", "perfil", "perfil-editar", "triagem", "pagamento", "carteirinha"];
   const prof = ["painel-profissional", "consulta-profissional", "cliente-form"];
   const nome = pagina.replace(".html", "");
   const sessao = sessionStorage.getItem("sessao");
@@ -16,9 +16,8 @@
 const LOGO_SVG = `
 <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M38 14 h24 a6 6 0 0 1 6 6 v14 h14 a6 6 0 0 1 6 6 v10 a6 6 0 0 1 -6 6 H68 v14 a6 6 0 0 1 -6 6 H38 a6 6 0 0 1 -6 -6 V56 H18 a6 6 0 0 1 -6 -6 V40 a6 6 0 0 1 6 -6 h14 V20 a6 6 0 0 1 6 -6 Z"
-        stroke="#000" stroke-width="4.5" stroke-linejoin="round" fill="none"/>
-  <path d="M58 30 c3.5-4 10-4 12.5 0.5 c2.5 4.5 -1 9 -12.5 17 c-11.5-8-15-12.5-12.5-17 c2.5-4.5 9-4.5 12.5-0.5Z"
-        fill="#E02D2D"/>
+        stroke="currentColor" stroke-width="4.5" stroke-linejoin="round" fill="none"/>
+  <path class="heart" d="M58 30 c3.5-4 10-4 12.5 0.5 c2.5 4.5 -1 9 -12.5 17 c-11.5-8-15-12.5-12.5-17 c2.5-4.5 9-4.5 12.5-0.5Z"/>
 </svg>`;
 
 const PLANOS = {
@@ -116,7 +115,7 @@ if (recuperarForm) {
   });
 }
 
-// Pré-triagem via chatbot
+// Triagem via chatbot
 const chatMessages = document.getElementById("chat-messages");
 const chatInputArea = document.getElementById("chat-input-area");
 if (chatMessages && chatInputArea) {
@@ -220,7 +219,7 @@ if (chatMessages && chatInputArea) {
       : "Nenhum sintoma informado";
   }
 
-  // Recomendação do especialista mais adequado a partir das respostas da pré-triagem.
+  // Recomendação do especialista mais adequado a partir das respostas da triagem.
   // TODO: substituir por uma chamada à IA de chatbot quando ela estiver disponível.
   // Por enquanto é uma regra simples (palavras-chave do motivo + sintomas marcados),
   // mas já recebe o objeto completo de respostas para facilitar a troca futura:
@@ -264,8 +263,8 @@ if (chatMessages && chatInputArea) {
         "bot"
       );
 
-      // TODO: integrar com a API de pré-triagem
-      console.log("Pré-triagem:", respostas, "→ especialidade recomendada:", especialidadeRecomendada);
+      // TODO: integrar com a API de triagem
+      console.log("Triagem:", respostas, "→ especialidade recomendada:", especialidadeRecomendada);
       sessionStorage.setItem("preTriagem", JSON.stringify(respostas));
 
       const consultas = JSON.parse(localStorage.getItem("consultas") || "[]");
@@ -275,7 +274,7 @@ if (chatMessages && chatInputArea) {
         especialidade: especialidadeRecomendada,
         data: "",
         horario: "",
-        origem: "pre-triagem",
+        origem: "triagem",
         paciente: usuario.nome || "Paciente",
         preTriagem: respostas,
         atendida: false,
@@ -446,7 +445,7 @@ if (agendamentoForm) {
     let dados;
 
     if (consultaId) {
-      // Completa a consulta que já existia (sugerida pela pré-triagem), em vez de duplicar.
+      // Completa a consulta que já existia (sugerida pela triagem), em vez de duplicar.
       const consulta = consultas.find((c) => String(c.id) === consultaId);
       if (consulta) {
         consulta.especialidade = document.getElementById("especialidade").value;
@@ -521,7 +520,7 @@ if (tabsWrap) {
           ? "agendada"
           : "realizada";
         const linhaData = pendente
-          ? "Sugestão da pré-triagem"
+          ? "Sugestão da triagem"
           : `${formatarData(c.data)} às ${c.horario || "—"}`;
         const acao = pendente
           ? `<a class="consulta-action" href="agendamento.html?especialidade=${c.especialidade}&consultaId=${c.id}">marcar horário</a>`
@@ -689,7 +688,7 @@ if (consultaDetalhe) {
       ${
         triagem
           ? `
-      <p class="intro-text left" style="margin-bottom:16px;">Pré-triagem do paciente</p>
+      <p class="intro-text left" style="margin-bottom:16px;">Triagem do paciente</p>
       <div class="summary-box">
         <div class="summary-row"><span class="label">Motivo</span><span class="value">${
           triagem.motivo || "—"
@@ -702,7 +701,7 @@ if (consultaDetalhe) {
           triagem.observacoes || "—"
         }</span></div>
       </div>`
-          : `<p class="empty-state">Esta consulta não veio de uma pré-triagem pelo chatbot.</p>`
+          : `<p class="empty-state">Esta consulta não veio de uma triagem pelo chatbot.</p>`
       }
     `;
     consultaDetalhe.appendChild(info);
@@ -980,4 +979,64 @@ if (primeiroForm) {
   nav.innerHTML = itens.map(([k, t, d]) => `<a href="${k}.html" class="${pg === k ? "on" : ""}"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></span>${t}</a>`).join("");
   const app = document.querySelector(".app");
   if (app) app.appendChild(nav);
+})();
+
+// ---------- Acessibilidade: tema Padrão / Branco / Preto (fica salvo no navegador) ----------
+(function () {
+  const TEMAS = [
+    { id: "padrao", nome: "Padrão", desc: "Cores do CaisMed" },
+    { id: "branco", nome: "Branco", desc: "Fundo branco e letras pretas, alto contraste" },
+    { id: "preto", nome: "Preto", desc: "Fundo preto e letras brancas, alto contraste" },
+  ];
+  const A11Y_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v4.5M12 14.5l-3.5 6M12 14.5l3.5 6"/></svg>`;
+
+  function aplicar(id) {
+    document.documentElement.setAttribute("data-tema", id);
+    try { localStorage.setItem("tema", id); } catch (e) {}
+    document.querySelectorAll(".a11y-opt").forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset.tema === id))
+    );
+  }
+  const atual = () => document.documentElement.getAttribute("data-tema") || "padrao";
+
+  const overlay = document.createElement("div");
+  overlay.className = "a11y-overlay";
+  overlay.innerHTML = `
+    <div class="a11y-panel" role="dialog" aria-modal="true" aria-labelledby="a11y-titulo">
+      <div class="a11y-top">
+        <h2 id="a11y-titulo">Acessibilidade</h2>
+        <button type="button" class="a11y-close" aria-label="Fechar">✕</button>
+      </div>
+      <p class="a11y-sub">Escolha o tema que fica melhor para você ler.</p>
+      ${TEMAS.map((t) => `
+        <button type="button" class="a11y-opt" data-tema="${t.id}" aria-pressed="false">
+          <span class="a11y-swatch sw-${t.id}"></span>
+          <span><b>${t.nome}</b><small>${t.desc}</small></span>
+        </button>`).join("")}
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const abrir = () => { overlay.classList.add("open"); overlay.querySelector(".a11y-close").focus(); };
+  const fechar = () => overlay.classList.remove("open");
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) fechar(); });
+  overlay.querySelector(".a11y-close").addEventListener("click", fechar);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") fechar(); });
+  overlay.querySelectorAll(".a11y-opt").forEach((b) =>
+    b.addEventListener("click", () => aplicar(b.dataset.tema))
+  );
+
+  // Botão de acessibilidade no cabeçalho de todas as telas
+  document.querySelectorAll(".app-header").forEach((header) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "a11y-btn";
+    btn.setAttribute("aria-label", "Acessibilidade");
+    btn.title = "Acessibilidade";
+    btn.innerHTML = A11Y_SVG;
+    btn.addEventListener("click", abrir);
+    const sino = header.querySelector(".bell");
+    sino ? header.insertBefore(btn, sino) : header.appendChild(btn);
+  });
+
+  aplicar(atual());
 })();

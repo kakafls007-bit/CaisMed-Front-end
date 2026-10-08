@@ -17,7 +17,7 @@ Hoje os dados vêm do `localStorage`. Os trechos marcados com `TODO` no `app.js`
 | Listar planos | `GET /planos` |
 | Fatura atual e histórico | `GET /clientes/:id/faturas` |
 | Pagar fatura (Pix, cartão, boleto) | `POST /faturas/:id/pagamento` |
-| Pré-triagem (texto e áudio) | `POST /pre-triagem` (multipart: `audio`) |
+| Triagem (texto e áudio) | `POST /triagem` (multipart: `audio`) |
 | Consultas | `GET/POST /consultas`, `PATCH /consultas/:id` |
 
 Planos atuais (ficam em `PLANOS`, no topo do `app.js`): Essencial R$ 89,90, Conforto R$ 149,90, Premium R$ 249,90 e Família R$ 399,90.
